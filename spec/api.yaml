@@ -1,0 +1,50 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: downloop api
+
+paths:
+  /sessions:
+    get:
+      description: Returns a list of user sessions
+      responses:
+        "200":
+          description: session list successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionList"
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Session"
+      responses:
+        "200":
+          description: session post successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+
+components:
+  schemas:
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+
+    SessionList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Session"
