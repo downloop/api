@@ -1,0 +1,6 @@
+resources:
+- github.com/zalando/postgres-operator/manifests
+- api.yaml
+- postgres.yaml
+
+#namespace: downloop

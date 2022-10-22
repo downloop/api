@@ -1,0 +1,22 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: downloop-downloop
+  namespace: downloop
+spec:
+  teamId: downloop
+  volume:
+    size: 1Gi
+  numberOfInstances: 2
+  users:
+    admin: # database owner
+      - superuser
+      - createdb
+    downloop: [] # role for application foo
+  useLoadBalancer: true
+  databases:
+    downloop: downloop # dbname: owner
+  # preparedDatabases:
+  #   bar: {}
+  postgresql:
+    version: "14"
