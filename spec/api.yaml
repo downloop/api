@@ -28,6 +28,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
+  
+  /session/{id}:
+    get:
+      summary: set a session by id
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        "200":
+          description: session post successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
 
 components:
   schemas:
@@ -37,12 +55,20 @@ components:
         id:
           type: string
           format: uuid
+          x-oapi-codegen-extra-tags:
+            db: id
         start_time:
           type: string
-          format: time
+          format: date-time
+          x-oapi-codegen-extra-tags:
+            db: start_time
         end_time:
           type: string
-          format: time
+          format: date-time
+          x-oapi-codegen-extra-tags:
+            db: end_time
+      required:
+      - start_time
 
     SessionList:
       type: array

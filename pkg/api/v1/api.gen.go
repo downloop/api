@@ -8,10 +8,13 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
@@ -19,9 +22,9 @@ import (
 
 // Session defines model for Session.
 type Session struct {
-	EndTime   *string             `json:"end_time,omitempty"`
-	Id        *openapi_types.UUID `json:"id,omitempty"`
-	StartTime *string             `json:"start_time,omitempty"`
+	EndTime   *time.Time          `db:"end_time" json:"end_time,omitempty"`
+	Id        *openapi_types.UUID `db:"id" json:"id,omitempty"`
+	StartTime time.Time           `db:"start_time" json:"start_time"`
 }
 
 // SessionList defines model for SessionList.
@@ -35,6 +38,9 @@ type PostSessionsJSONRequestBody = PostSessionsJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// set a session by id
+	// (GET /session/{id})
+	GetSessionId(ctx echo.Context, id openapi_types.UUID) error
 
 	// (GET /sessions)
 	GetSessions(ctx echo.Context) error
@@ -46,6 +52,22 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// GetSessionId converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSessionId(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetSessionId(ctx, id)
+	return err
 }
 
 // GetSessions converts echo context to params.
@@ -94,6 +116,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.GET(baseURL+"/session/:id", wrapper.GetSessionId)
 	router.GET(baseURL+"/sessions", wrapper.GetSessions)
 	router.POST(baseURL+"/sessions", wrapper.PostSessions)
 
@@ -102,12 +125,14 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/7SRwW7bMAyGX8XgdjRib7v5uMswYIeheYBClehEgS2qJNUiCPzuhaQ0gYuiyKE9mSap",
-	"nx9/nsDSHClgUIHhBGL3OJsSblHEU8hhZIrI6rEUMLh79TPmeCSejcIAJdGCHiPCAKLsww6WFrxbtaXk",
-	"3Xttoob1VtXlkqGHA1rNAmfaf140K3jFucB+ZxxhgG/ddc/uvGT3uuFVzzCbIyx5gg8jZQH1OuWSo+cw",
-	"EcXGRA8tPCFXd+DHpt/0WYMihlwc4FdJtRCN7gtFJ3VU+dlhQXQoln3UqnKHmjhIY5rJizY0NkmQm8u7",
-	"Is8md/91MMAf1O21xiiRgtT7/Oz7/LEUFEMZZWKcvC2Pu4PUm1YTbrSo2FpsWVOf8SqzJGtRZExTbY1U",
-	"b7EG/0+yJn9MKPqb3PGzoStFHuAZHQzKCZev9+ojn7Ilb3xaluUlAAD//z/CziKFAwAA",
+	"H4sIAAAAAAAC/8ySTYsbPRCE/4ro9z3KO05ym2MuYSGHkByXJcijtrcXj1qrbiVrjP57kGb8MYR8ELIQ",
+	"XyzUo6eLqjrCwGPkgEEF+iPI8ICja8dPKEIc6jEmjpiUsA0w+M9KI9bzltPoFHrwTnHVbi3oISL0IJoo",
+	"7MDC84pdpNXAHncYVvisya3U7RrNb6C/IEuxQH5Bzpn8H0HJN5yoS/q3BV9BS12S8ClTQg/93fXs/szm",
+	"zSMOCsWefH1PohVHimPj/p9wCz38110S6eY4ulMW5cxzKbnDtJvClitASfd15Plr2DNH4yKBhS+Yphzh",
+	"1c36Zl0ZHDHUYQ9v2pWF6PShqehkWtUdyZd6scMmsxbAKXG49dDDO9RZ0q1vr5MbUTEJ9HdHoLqsEsFC",
+	"cNV3aBFeTNKU0c5l+3XYpdzXxxI5yFTB1+t1/Rs4KIamz8W4p6Ep7B5lqu2F/1veVi89ypAo6mTY7IWJ",
+	"LGokDwOKbPN+qlUeR5cO7Ss1zpy+3RzMXLyTlXJl45L/ETWnIMaZPYka3posmMz5nf2h7QIv70hr6E9c",
+	"aZoXrhQL1arv+/KBZan8KaPoW/aHl4lx2bTyr7Wn/r4FAAD//7fESVN6BQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
