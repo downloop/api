@@ -1,5 +1,5 @@
 BINARY = api
-TAG = downloop/api
+TAG = ghcr.io/downloop/api
 
 all: gen api
 
@@ -20,4 +20,11 @@ run: api
 
 .PHONY: image
 image:
-	docker build . -t ${TAG} 
+	docker build . -t ${TAG}
+
+.PHONY: push
+push: image
+	docker push ${TAG}:latest
+
+.PHONY: test
+	act -j build
