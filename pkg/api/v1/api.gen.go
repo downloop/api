@@ -38,6 +38,9 @@ type PostSessionsJSONRequestBody = PostSessionsJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// delete a session by id
+	// (DELETE /session/{id})
+	DeleteSessionId(ctx echo.Context, id openapi_types.UUID) error
 	// set a session by id
 	// (GET /session/{id})
 	GetSessionId(ctx echo.Context, id openapi_types.UUID) error
@@ -52,6 +55,22 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// DeleteSessionId converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteSessionId(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteSessionId(ctx, id)
+	return err
 }
 
 // GetSessionId converts echo context to params.
@@ -116,6 +135,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.DELETE(baseURL+"/session/:id", wrapper.DeleteSessionId)
 	router.GET(baseURL+"/session/:id", wrapper.GetSessionId)
 	router.GET(baseURL+"/sessions", wrapper.GetSessions)
 	router.POST(baseURL+"/sessions", wrapper.PostSessions)
@@ -125,14 +145,15 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8ySTYsbPRCE/4ro9z3KO05ym2MuYSGHkByXJcijtrcXj1qrbiVrjP57kGb8MYR8ELIQ",
-	"XyzUo6eLqjrCwGPkgEEF+iPI8ICja8dPKEIc6jEmjpiUsA0w+M9KI9bzltPoFHrwTnHVbi3oISL0IJoo",
-	"7MDC84pdpNXAHncYVvisya3U7RrNb6C/IEuxQH5Bzpn8H0HJN5yoS/q3BV9BS12S8ClTQg/93fXs/szm",
-	"zSMOCsWefH1PohVHimPj/p9wCz38110S6eY4ulMW5cxzKbnDtJvClitASfd15Plr2DNH4yKBhS+Yphzh",
-	"1c36Zl0ZHDHUYQ9v2pWF6PShqehkWtUdyZd6scMmsxbAKXG49dDDO9RZ0q1vr5MbUTEJ9HdHoLqsEsFC",
-	"cNV3aBFeTNKU0c5l+3XYpdzXxxI5yFTB1+t1/Rs4KIamz8W4p6Ep7B5lqu2F/1veVi89ypAo6mTY7IWJ",
-	"LGokDwOKbPN+qlUeR5cO7Ss1zpy+3RzMXLyTlXJl45L/ETWnIMaZPYka3posmMz5nf2h7QIv70hr6E9c",
-	"aZoXrhQL1arv+/KBZan8KaPoW/aHl4lx2bTyr7Wn/r4FAAD//7fESVN6BQAA",
+	"H4sIAAAAAAAC/8yTT2sbMRDFv4qY9ihn3T+nPZZCCfRQ2mMIRVmNnQm7GkUz28YYffci7drO1vQPpaH1",
+	"xUJif3rz3tMeOh4iBwwq0O5BulscXF1+QhHiUJYxccSkhPUAg/+sNGBZbzgNTqEF7xRXddeC7iJCC6KJ",
+	"whYsPKzYRVp17HGLYYUPmtxK3bbS/A20J2TOFsgvyONI/o+g5CtO1CX924IfQXO5JOH9SAk9tFePz66P",
+	"bL65w04h24Ov70m04EhxqNznCTfQwrPmlEgzx9EcsshHnkvJ7aa7KWy4AJS0L0eev4aeORoXCSx8wTTl",
+	"CC8u1hfrwuCIoRy28KpuWYhOb6uKRqarmj35XMfFHrVaVzrglDhcemjhbd2fhV36ykhuQMUk0F7tgcqV",
+	"hQsWgivuQw3yZJWmEe1cuV9HnvN1+VgiB5mK+HL9elIoXaKo05CT3jn6cRhc2h13jTPzeOZmZ0o/LGxR",
+	"z4d7h/qPJ1uXv46DYqj6XIw9dVVhcyfTszzxf6s7xZGlVwczIosaGbsORTZj/513gnpuXLbHqlTFs41L",
+	"/kfUMQUxzvQkanhjRsFkjt/ZH9ou8PSO1Bf4E1eq5oUr2UKx6rwvH1iWyu9HFH3Dfvc0MS6blv+39pTf",
+	"twAAAP//L4wX3loGAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

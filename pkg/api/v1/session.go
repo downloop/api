@@ -50,3 +50,11 @@ func (dc DownloopContext) GetSessionId(c echo.Context, id uuid.UUID) error {
 	}
 	return c.JSON(200, session)
 }
+
+func (dc DownloopContext) DeleteSessionId(c echo.Context, id uuid.UUID) error {
+	_, err := dc.Database.Exec("DELETE FROM sessions WHERE id = $1;", id)
+	if err != nil {
+		return err
+	}
+	return c.JSON(204, nil)
+}
