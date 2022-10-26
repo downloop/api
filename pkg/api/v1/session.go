@@ -31,8 +31,8 @@ func (dc DownloopContext) PostSessions(c echo.Context) error {
 		return err
 	}
 
-	sqlStatement := "INSERT INTO sessions (start_time, end_time) VALUES ($1, $2) RETURNING id;"
-	err := dc.Database.QueryRowx(sqlStatement, session.StartTime, session.EndTime).Scan(&session.Id)
+	sqlStatement := "INSERT INTO sessions (user_id, start_time, end_time) VALUES ($1, $2, $3) RETURNING id;"
+	err := dc.Database.QueryRowx(sqlStatement, session.UserId, session.StartTime, session.EndTime).Scan(&session.Id)
 	if err != nil {
 		return err
 	}

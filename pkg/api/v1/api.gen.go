@@ -25,6 +25,7 @@ type Session struct {
 	EndTime   *time.Time          `db:"end_time" json:"end_time,omitempty"`
 	Id        *openapi_types.UUID `db:"id" json:"id,omitempty"`
 	StartTime time.Time           `db:"start_time" json:"start_time"`
+	UserId    *openapi_types.UUID `db:"user_id" json:"user_id,omitempty"`
 }
 
 // SessionList defines model for SessionList.
@@ -145,15 +146,15 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8yTT2sbMRDFv4qY9ihn3T+nPZZCCfRQ2mMIRVmNnQm7GkUz28YYffci7drO1vQPpaH1",
-	"xUJif3rz3tMeOh4iBwwq0O5BulscXF1+QhHiUJYxccSkhPUAg/+sNGBZbzgNTqEF7xRXddeC7iJCC6KJ",
-	"whYsPKzYRVp17HGLYYUPmtxK3bbS/A20J2TOFsgvyONI/o+g5CtO1CX924IfQXO5JOH9SAk9tFePz66P",
-	"bL65w04h24Ov70m04EhxqNznCTfQwrPmlEgzx9EcsshHnkvJ7aa7KWy4AJS0L0eev4aeORoXCSx8wTTl",
-	"CC8u1hfrwuCIoRy28KpuWYhOb6uKRqarmj35XMfFHrVaVzrglDhcemjhbd2fhV36ykhuQMUk0F7tgcqV",
-	"hQsWgivuQw3yZJWmEe1cuV9HnvN1+VgiB5mK+HL9elIoXaKo05CT3jn6cRhc2h13jTPzeOZmZ0o/LGxR",
-	"z4d7h/qPJ1uXv46DYqj6XIw9dVVhcyfTszzxf6s7xZGlVwczIosaGbsORTZj/513gnpuXLbHqlTFs41L",
-	"/kfUMQUxzvQkanhjRsFkjt/ZH9ou8PSO1Bf4E1eq5oUr2UKx6rwvH1iWyu9HFH3Dfvc0MS6blv+39pTf",
-	"twAAAP//L4wX3loGAAA=",
+	"H4sIAAAAAAAC/8yTT2sbMRDFv4qY9ihn3T+nPZZCCfRQ2mMIQV6NHYVdSdGM2hij715Gu15na/qHktD6",
+	"YiGxP7157+kAXRhi8OiZoD0Adbc4mLr8gkQueFnGFCImdlgP0NsbdgPKehvSYBhasIZxVXc18D4itECc",
+	"nN+BhodVMNGtumBxh36FD5zMis2u0uwG2hOyFA3OLsg5O/tXUGcrjtgkfmrBj6ByRyZMN0+l+wgrQk54",
+	"n11CC+3V40uvZ3DY3GHHUPQxsI+OWFiOcajQlwm30MKL5hR1M+XcHEMuM8+kZPbj3c5vgwDYcS9HNnzz",
+	"fQhRmehAw1dMY0Hg1cX6Yi2MENHLYQtv6paGaPi2qmhovKo5OFvqrNgj10ykXIZd8JcWWnhf9ydhl7Yy",
+	"khmQMRG0VwdwcqVwQYM3EitUp09Wccqopy7/PpNSruVjisHT2PDX67ejQuqSizwOOeqdOpWHwaT9vKuM",
+	"msZTm72S7DTskM+H+4D8jydby18XPKOv+kyMveuqwuaOxvd+4v9Rd8SRpVdHM2IgVpS7Dom2uf/BO0I+",
+	"N67ouSpV8WTjkv8ZOSdPyqjeEauwVfJo1Pyd/qntBM/vSH2Bv3Clal64UjSIVed9+RRoqfw+I/G7YPfP",
+	"E+OyaeV/a4/8vgcAAP//hjd2GbMGAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

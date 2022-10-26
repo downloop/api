@@ -1,10 +1,10 @@
 BINARY = api
 TAG = ghcr.io/downloop/api
 
-all: gen api
+all: api
 
 .PHONY: api
-api:
+api: gen
 	go build -o ${BINARY} ./cmd/api
 
 .PHONY: gen
