@@ -16,7 +16,7 @@ deps:
 
 .PHONY: run
 run: api
-	./api
+	./api 
 
 .PHONY: image
 image:
@@ -27,4 +27,5 @@ push: image
 	docker push ${TAG}:latest
 
 .PHONY: test
-	act -j build
+test:
+	go test -v ./pkg/api/v1/
