@@ -4,6 +4,31 @@ info:
   title: downloop api
 
 paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: get users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+
+    post: 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: user post successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
   /sessions:
     get:
       description: Returns a list of user sessions

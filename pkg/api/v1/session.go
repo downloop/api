@@ -7,19 +7,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const sessionsTable = "sessions"
+
 func (dc DownloopContext) GetSessions(c echo.Context) error {
-	rows, err := dc.Database.Queryx("SELECT * FROM sessions;")
+	var sessions []mirrorSession
+	err := selectRecords(dc.Database, sessionsTable, &sessions, true, 1)
 	if err != nil {
 		return err
-	}
-
-	var sessions []Session
-	for rows.Next() {
-		var session Session
-		if err := rows.StructScan(&session); err != nil {
-			return err
-		}
-		sessions = append(sessions, session)
 	}
 
 	return c.JSON(200, sessions)

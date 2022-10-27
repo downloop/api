@@ -31,11 +31,26 @@ type Session struct {
 // SessionList defines model for SessionList.
 type SessionList = []Session
 
+// User defines model for User.
+type User struct {
+	Id       *openapi_types.UUID `db:"id" json:"id,omitempty"`
+	Username *string             `db:"username" json:"username,omitempty"`
+}
+
+// UserList defines model for UserList.
+type UserList = []User
+
 // PostSessionsJSONBody defines parameters for PostSessions.
 type PostSessionsJSONBody = Session
 
+// PostUsersJSONBody defines parameters for PostUsers.
+type PostUsersJSONBody = User
+
 // PostSessionsJSONRequestBody defines body for PostSessions for application/json ContentType.
 type PostSessionsJSONRequestBody = PostSessionsJSONBody
+
+// PostUsersJSONRequestBody defines body for PostUsers for application/json ContentType.
+type PostUsersJSONRequestBody = PostUsersJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -51,6 +66,12 @@ type ServerInterface interface {
 
 	// (POST /sessions)
 	PostSessions(ctx echo.Context) error
+
+	// (GET /users)
+	GetUsers(ctx echo.Context) error
+
+	// (POST /users)
+	PostUsers(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -108,6 +129,24 @@ func (w *ServerInterfaceWrapper) PostSessions(ctx echo.Context) error {
 	return err
 }
 
+// GetUsers converts echo context to params.
+func (w *ServerInterfaceWrapper) GetUsers(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetUsers(ctx)
+	return err
+}
+
+// PostUsers converts echo context to params.
+func (w *ServerInterfaceWrapper) PostUsers(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostUsers(ctx)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -140,21 +179,24 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/session/:id", wrapper.GetSessionId)
 	router.GET(baseURL+"/sessions", wrapper.GetSessions)
 	router.POST(baseURL+"/sessions", wrapper.PostSessions)
+	router.GET(baseURL+"/users", wrapper.GetUsers)
+	router.POST(baseURL+"/users", wrapper.PostUsers)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8yTT2sbMRDFv4qY9ihn3T+nPZZCCfRQ2mMIQV6NHYVdSdGM2hij715Gu15na/qHktD6",
-	"YiGxP7157+kAXRhi8OiZoD0Adbc4mLr8gkQueFnGFCImdlgP0NsbdgPKehvSYBhasIZxVXc18D4itECc",
-	"nN+BhodVMNGtumBxh36FD5zMis2u0uwG2hOyFA3OLsg5O/tXUGcrjtgkfmrBj6ByRyZMN0+l+wgrQk54",
-	"n11CC+3V40uvZ3DY3GHHUPQxsI+OWFiOcajQlwm30MKL5hR1M+XcHEMuM8+kZPbj3c5vgwDYcS9HNnzz",
-	"fQhRmehAw1dMY0Hg1cX6Yi2MENHLYQtv6paGaPi2qmhovKo5OFvqrNgj10ykXIZd8JcWWnhf9ydhl7Yy",
-	"khmQMRG0VwdwcqVwQYM3EitUp09Wccqopy7/PpNSruVjisHT2PDX67ejQuqSizwOOeqdOpWHwaT9vKuM",
-	"msZTm72S7DTskM+H+4D8jydby18XPKOv+kyMveuqwuaOxvd+4v9Rd8SRpVdHM2IgVpS7Dom2uf/BO0I+",
-	"N67ouSpV8WTjkv8ZOSdPyqjeEauwVfJo1Pyd/qntBM/vSH2Bv3Clal64UjSIVed9+RRoqfw+I/G7YPfP",
-	"E+OyaeV/a4/8vgcAAP//hjd2GbMGAAA=",
+	"H4sIAAAAAAAC/8yUT28TMRDFv4o1cHSa8Oe0R4SEKnFAoJ6qqnLXk9RV1nY9s9Ao8ndHnt3sdtlCoUqB",
+	"U7d2/Pzm92a8hzo0MXj0TFDtgeprbIx8fkEiF3z5jClETOxQNtDbS3YNlu91SI1hqMAaxoWsauBdRKiA",
+	"ODm/AQ13i2CiW9TB4gb9Au84mQWbjajZK6hGyZw1ODtRbltnnyTqrMgRm8THNnxPtNzREqbLY/k+iOWi",
+	"nPC2dQktVOf3L70YhMPVDdYMWR8C++iIi5ZjbET0ZcI1VPBiOUa97HNeHkLOg55JyezK/2eEaR7+kcMp",
+	"tXrTRfM0UnJaUM2AlAr+iIaUPEMhPenXQTw63pYtG775bQhRmehAw1dM3azAq5PVyapohIi+bFbwRpY0",
+	"RMPXYmFJHfXl3tksxeAWWRgU1IZd8KcWKngv631Gp1Y0kmmQMRFU53tw5cqiCxo6jCB5jF3DqUXdj/Xj",
+	"yeV8UQ5TDJ66vF+v3nYOqU4ucldk57cfr7ZpTNoNq8qovjx1tVMlZg0b5HlxH5D/cWWr8qcOntGLPxPj",
+	"1tXicHlD3dM36v/WGBUiU1YHGDEQK2rrGonW7fYHdoQ8B5f10CriuMc41f+M3CZPyqitI1ZhrcpUqOGc",
+	"/il2gucnIuP3CyrieUIlayio5v3yKdDU+W2LxO+C3T1PjNNOy/9b90h3lKjvt8Ys6jP5wTN6H97YB8xv",
+	"kFXn8JFYR5fHz7R70/9uoOOdUyAymQ9FmfP3AAAA///dq36NiQkAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
