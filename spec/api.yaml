@@ -6,28 +6,50 @@ info:
 paths:
   /users:
     get:
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: offset
+          in: query
+          schema:
+            type: integer
+
       responses:
         "200":
-          description: get users
+          description: users successfully listed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserList"
-
-    post: 
+                $ref: "#/components/schemas/UserResponseList"
+        default:
+          description: error creating user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: "#/components/schemas/UserPost"
       responses:
-        "200":
-          description: user post successful
+        "201":
+          description: user creation successful
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/UserResponse"
+        default:
+          description: error creating user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /sessions:
     get:
@@ -38,22 +60,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionList"
+                $ref: "#/components/schemas/SessionResponseList"
     post:
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Session"
+              $ref: "#/components/schemas/SessionPost"
       responses:
-        "200":
+        "201":
           description: session post successful
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
-  
+
   /session/{id}:
     get:
       summary: set a session by id
@@ -70,7 +92,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Session"
+                $ref: "#/components/schemas/SessionResponse"
     delete:
       summary: delete a session by id
       parameters:
@@ -86,22 +108,66 @@ paths:
 
 components:
   schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+      required:
+        - code
+        - message
+
+    UserPost:
+      type: object
+      properties:
+        username:
+          type: string
+      required:
+        - username
+
     User:
       type: object
       properties:
         id:
           type: string
           format: uuid
-          x-oapi-codegen-extra-tags:
-            db: id
         username:
           type: string
-          x-oapi-codegen-extra-tags:
-            db: username
-    UserList:
-      type: array
-      items:
-        $ref: "#/components/schemas/User"
+      required:
+        - id
+        - username
+
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/User"
+      required:
+        - data
+
+    UserResponseList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+      required:
+        - data
+
+    SessionPost:
+      type: object
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+      required:
+        - start_time
 
     Session:
       type: object
@@ -109,26 +175,34 @@ components:
         id:
           type: string
           format: uuid
-          x-oapi-codegen-extra-tags:
-            db: id
         user_id:
           type: string
           format: uuid
-          x-oapi-codegen-extra-tags:
-            db: user_id 
         start_time:
           type: string
           format: date-time
-          x-oapi-codegen-extra-tags:
-            db: start_time
         end_time:
           type: string
           format: date-time
-          x-oapi-codegen-extra-tags:
-            db: end_time
       required:
-      - start_time
-    SessionList:
-      type: array
-      items:
-        $ref: "#/components/schemas/Session"
+        - id
+        #- user_id
+        - start_time
+
+    SessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Session"
+      required:
+        - data
+
+    SessionResponseList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Session"
+      required:
+        - data

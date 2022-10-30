@@ -1,7 +1,7 @@
 package v1
 
-import "github.com/jmoiron/sqlx" 
+import "gorm.io/gorm"
 
 type DownloopContext struct {
-	Database *sqlx.DB 
+	Database *gorm.DB
 }

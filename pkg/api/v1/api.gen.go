@@ -12,45 +12,12 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 )
-
-// Session defines model for Session.
-type Session struct {
-	EndTime   *time.Time          `db:"end_time" json:"end_time,omitempty"`
-	Id        *openapi_types.UUID `db:"id" json:"id,omitempty"`
-	StartTime time.Time           `db:"start_time" json:"start_time"`
-	UserId    *openapi_types.UUID `db:"user_id" json:"user_id,omitempty"`
-}
-
-// SessionList defines model for SessionList.
-type SessionList = []Session
-
-// User defines model for User.
-type User struct {
-	Id       *openapi_types.UUID `db:"id" json:"id,omitempty"`
-	Username *string             `db:"username" json:"username,omitempty"`
-}
-
-// UserList defines model for UserList.
-type UserList = []User
-
-// PostSessionsJSONBody defines parameters for PostSessions.
-type PostSessionsJSONBody = Session
-
-// PostUsersJSONBody defines parameters for PostUsers.
-type PostUsersJSONBody = User
-
-// PostSessionsJSONRequestBody defines body for PostSessions for application/json ContentType.
-type PostSessionsJSONRequestBody = PostSessionsJSONBody
-
-// PostUsersJSONRequestBody defines body for PostUsers for application/json ContentType.
-type PostUsersJSONRequestBody = PostUsersJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -68,7 +35,7 @@ type ServerInterface interface {
 	PostSessions(ctx echo.Context) error
 
 	// (GET /users)
-	GetUsers(ctx echo.Context) error
+	GetUsers(ctx echo.Context, params GetUsersParams) error
 
 	// (POST /users)
 	PostUsers(ctx echo.Context) error
@@ -133,8 +100,24 @@ func (w *ServerInterfaceWrapper) PostSessions(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetUsers(ctx echo.Context) error {
 	var err error
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetUsersParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetUsers(ctx)
+	err = w.Handler.GetUsers(ctx, params)
 	return err
 }
 
@@ -187,16 +170,18 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8yUT28TMRDFv4o1cHSa8Oe0R4SEKnFAoJ6qqnLXk9RV1nY9s9Ao8ndHnt3sdtlCoUqB",
-	"U7d2/Pzm92a8hzo0MXj0TFDtgeprbIx8fkEiF3z5jClETOxQNtDbS3YNlu91SI1hqMAaxoWsauBdRKiA",
-	"ODm/AQ13i2CiW9TB4gb9Au84mQWbjajZK6hGyZw1ODtRbltnnyTqrMgRm8THNnxPtNzREqbLY/k+iOWi",
-	"nPC2dQktVOf3L70YhMPVDdYMWR8C++iIi5ZjbET0ZcI1VPBiOUa97HNeHkLOg55JyezK/2eEaR7+kcMp",
-	"tXrTRfM0UnJaUM2AlAr+iIaUPEMhPenXQTw63pYtG775bQhRmehAw1dM3azAq5PVyapohIi+bFbwRpY0",
-	"RMPXYmFJHfXl3tksxeAWWRgU1IZd8KcWKngv631Gp1Y0kmmQMRFU53tw5cqiCxo6jCB5jF3DqUXdj/Xj",
-	"yeV8UQ5TDJ66vF+v3nYOqU4ucldk57cfr7ZpTNoNq8qovjx1tVMlZg0b5HlxH5D/cWWr8qcOntGLPxPj",
-	"1tXicHlD3dM36v/WGBUiU1YHGDEQK2rrGonW7fYHdoQ8B5f10CriuMc41f+M3CZPyqitI1ZhrcpUqOGc",
-	"/il2gucnIuP3CyrieUIlayio5v3yKdDU+W2LxO+C3T1PjNNOy/9b90h3lKjvt8Ys6jP5wTN6H97YB8xv",
-	"kFXn8JFYR5fHz7R70/9uoOOdUyAymQ9FmfP3AAAA///dq36NiQkAAA==",
+	"H4sIAAAAAAAC/8RWTW/cOAz9KwZ3j97MZNuTj0WLIkAPRYqcgiBQLHqiwPqISLcYDPzfC9Hz5bGTeNpJ",
+	"crIhUeTj4yOlFZTeBu/QMUGxAirv0Sr5/RKjj+knRB8wskFZLr3G9OVlQCjAOMYFRmhzsEikFvubxNG4",
+	"BbRtDhEfGxNRQ3HdudjZ3+Qbe3/3gCUnXz+QyHg3DI9O37KxEqXy0SqGArRi/E9W88PQORjds20ao8fM",
+	"iFXkI103hPF2kv8DBsRkL+IzFHz3xKeg4fj8DjBPg3uJFLwjHELWilX6/huxggL+me2UN1vLbrYp+2Fs",
+	"OTsh6jczRtYmsmG0NBnCNpqKUS2nQ7oiHGmbiSpMinLKTmgiOb81fwrIuHqmR3kxwN/VW7g6itkTVroL",
+	"/mdlTmbGVV4YNFynPe1/udr7kKlgIIefGLsRBudn87N5iuQDurRZwAdZyiEovhegM+p0N1sZ3UoqWCML",
+	"rSlBxca7Cw0FfJb1tUovtPiIyiJjJCiuV2BSyOQXcuiK3GlllxXHBvP1qJ8yu27S4Y52wfr//GOHkMpo",
+	"AndJdni1EEiNtSout6uZytbpZXfLzOjExQJ5mNxX5HfObN7dcY7RCT4VQm1KQTh7oO5G2vmfMEi2DSKa",
+	"6XO2ISV44oyaskSiqqkPOCTkIYFtvpWMIF/T2fd/idxER5nKakOc+SpL/Zxtz+VP0k/wdsxIKz/DjmDv",
+	"sdPmENaDrZ9AGne9DB4bJP7k9fLU4GWwtv1pkdTXDng7P3Xo45QkSkll35fJoOxXYjDecY8NxuWu5Wpj",
+	"DcN+l1njjG0sFOf54FnY5uNefFUR9t0Mjr5mdw7ukhFShbU9NuulaBFlfmmsVFPzyQB1z+0RFJg2sjKi",
+	"YuMW0sEvtcCmmq+h/+2r4o3F33tsPFGsNUve9Vrg/WvVtu3vAAAA//+zVRDiaQ0AAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -34,8 +34,15 @@ spec:
                 secretKeyRef:
                   name: downloop.downloop-downloop.credentials.postgresql.acid.zalan.do
                   key: password
-                  optional:
-                    false 
+                  optional: false
+          volumeMounts:
+            - name: config
+              mountPath: /etc/downloop
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: config
 ---
 apiVersion: v1
 kind: Service
