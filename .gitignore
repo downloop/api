@@ -2,6 +2,6 @@
 
 # Ignore DevSpace cache and log folder
 .devspace/
-api
-cli
-
+/api
+/cli
+/manifests/downloop/secret.yaml

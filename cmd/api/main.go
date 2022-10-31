@@ -3,16 +3,17 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	sqladapter "github.com/Blank-Xu/sql-adapter"
 	"github.com/casbin/casbin/v2"
 	oapimiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	v1 "github.com/downloop/api/pkg/api/v1"
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/craigtracey/jwksmiddleware"
 	casbinmiddleware "github.com/labstack/echo-contrib/casbin"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -51,7 +52,7 @@ func main() {
 				Database: db,
 			}
 			e := echo.New()
-			e.HTTPErrorHandler = customHTTPErrorHandler
+			e.HTTPErrorHandler = v1.HTTPErrorHandler
 			e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 				Format: "method=${method}, uri=${uri}, status=${status}\n",
 			}))
@@ -59,6 +60,23 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
+
+			// configure JWT middleware
+			/*e.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+				Skipper: func(c echo.Context) bool {
+					return !enforceRBAC
+				},
+			}))*/
+
+			e.Use(jwksmiddleware.JWTWithConfig(jwksmiddleware.JWTConfig{
+				JWTConfig: middleware.JWTConfig{
+					Skipper: func(c echo.Context) bool {
+						return true
+						//	return !enforceRBAC
+					},
+				},
+				JWKSURL: "https://downloop.us.auth0.com/.well-known/jwks.json",
+			}))
 
 			// configure authorization
 			database, err := db.DB()
@@ -75,7 +93,8 @@ func main() {
 				return err
 			}
 			enforcer.AddRoleForUser("craig", "admin")
-			enforcer.AddPolicy("admin", "/sessions", "GET")
+			enforcer.AddPolicy("admin", "/users", "*")
+			enforcer.AddPolicy("admin", "/sessions", "*")
 
 			e.Use(casbinmiddleware.MiddlewareWithConfig(casbinmiddleware.Config{
 				Skipper: func(c echo.Context) bool {
@@ -83,6 +102,10 @@ func main() {
 				},
 				Enforcer: enforcer,
 				UserGetter: func(c echo.Context) (string, error) {
+					//user := c.Get("user")
+					//return user.(string), nil
+					u, _ := uuid.Parse("b56dd059-3200-45eb-8627-9d1480ba834b")
+					c.Set("user-uuid", u)
 					return "craig", nil
 				},
 			}))
@@ -113,17 +136,4 @@ func initDatabase() (*gorm.DB, error) {
 
 	db.AutoMigrate(v1.UserModel{}, v1.SessionModel{})
 	return db, nil
-}
-
-func customHTTPErrorHandler(err error, c echo.Context) {
-	code := http.StatusInternalServerError
-	if he, ok := err.(*echo.HTTPError); ok {
-		code = he.Code
-	}
-	e := v1.Error{
-		Code:    code,
-		Message: http.StatusText(code),
-	}
-	c.Logger().Error(err)
-	c.JSON(code, e)
 }

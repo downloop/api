@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -9,8 +9,9 @@ import (
 )
 
 func (dc DownloopContext) GetSessions(c echo.Context) error {
-
 	var sessions []SessionModel
+
+	//u := c.Get("user-uuid").(uuid.UUID)
 	err := dc.getAll(c, &sessions)
 	if err != nil {
 		return err
@@ -32,7 +33,6 @@ func (dc DownloopContext) GetSessions(c echo.Context) error {
 }
 
 func (dc DownloopContext) PostSessions(c echo.Context) error {
-
 	var session Session
 	if err := c.Bind(&session); err != nil {
 		return err
@@ -43,17 +43,12 @@ func (dc DownloopContext) PostSessions(c echo.Context) error {
 		end = *session.EndTime
 	}
 
-	u, err := uuid.Parse("b56dd059-3200-45eb-8627-9d1480ba834b")
-	if err != nil {
-		fmt.Println(err)
-	}
+	u := c.Get("user-uuid").(uuid.UUID)
 	model := SessionModel{
-		UserID: u,
+		UserID:    u,
 		StartTime: session.StartTime,
 		EndTime:   end,
 	}
-
-	fmt.Printf("MODEL %+v\n ", model)
 
 	tx := dc.Database.Create(&model)
 	if tx.Error != nil {
@@ -64,21 +59,31 @@ func (dc DownloopContext) PostSessions(c echo.Context) error {
 }
 
 func (dc DownloopContext) GetSessionId(c echo.Context, id uuid.UUID) error {
-	/*	var session Session
-		if err := dc.Database.QueryRowx("SELECT * FROM sessions WHERE id = $1", id).StructScan(&session); err != nil {
-			if err == sql.ErrNoRows {
-				return &echo.HTTPError{Code: 404}
-			}
-			return err
-		}
-	*/
-	return c.JSON(200, nil)
+	var model SessionModel
+	tx := dc.Database.Where("id = ?", id).Find(&model)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
+	resp := SessionResponse{
+		Data: Session{
+			Id:        model.ID,
+			StartTime: model.StartTime,
+		},
+	}
+	return c.JSON(200, resp)
 }
 
 func (dc DownloopContext) DeleteSessionId(c echo.Context, id uuid.UUID) error {
-	/*_, err := dc.Database.Exec("DELETE FROM sessions WHERE id = $1;", id)
-	if err != nil {
-		return err
-	}*/
-	return c.JSON(204, nil)
+	tx := dc.Database.Delete(SessionModel{}, id)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+	return c.NoContent(204)
 }

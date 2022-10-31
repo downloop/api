@@ -3,4 +3,5 @@ resources:
   - config.yaml
   - api.yaml
   - postgres.yaml
+  - secret.yaml
 #namespace: downloop
