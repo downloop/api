@@ -4,4 +4,4 @@
 .devspace/
 /api
 /cli
-/manifests/downloop/secret.yaml
+__debug_bin

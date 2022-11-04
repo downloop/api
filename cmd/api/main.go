@@ -5,16 +5,14 @@ import (
 	"log"
 	"os"
 
-	sqladapter "github.com/Blank-Xu/sql-adapter"
-	"github.com/casbin/casbin/v2"
-	oapimiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	v1 "github.com/downloop/api/pkg/api/v1"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/craigtracey/jwksmiddleware"
-	casbinmiddleware "github.com/labstack/echo-contrib/casbin"
+	oapimiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
@@ -27,6 +25,11 @@ const (
 	dbname = "downloop"
 )
 
+type DownloopClaims struct {
+	UUID uuid.UUID `json:"https://downloop.io/uuid"`
+	jwt.StandardClaims
+}
+
 func main() {
 
 	app := &cli.App{
@@ -38,12 +41,19 @@ func main() {
 			},
 			&cli.BoolFlag{
 				Name:  "rbac",
-				Value: false,
+				Value: true,
+			},
+			&cli.BoolFlag{
+				Name:  "validate",
+				Value: true,
 			},
 		},
 		Action: func(c *cli.Context) error {
 			enforceRBAC := c.Bool("rbac")
-			db, err := initDatabase()
+			wipe := c.Bool("wipe")
+			validate := c.Bool("validate")
+
+			db, err := initDatabase(wipe)
 			if err != nil {
 				panic(err)
 			}
@@ -56,61 +66,36 @@ func main() {
 			e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 				Format: "method=${method}, uri=${uri}, status=${status}\n",
 			}))
-			swagger, err := v1.GetSwagger()
-			if err != nil {
-				panic(err)
+			if validate {
+				swagger, err := v1.GetSwagger()
+				if err != nil {
+					panic(err)
+				}
+				e.Use(oapimiddleware.OapiRequestValidator(swagger))
 			}
 
 			// configure JWT middleware
-			/*e.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-				Skipper: func(c echo.Context) bool {
-					return !enforceRBAC
-				},
-			}))*/
-
 			e.Use(jwksmiddleware.JWTWithConfig(jwksmiddleware.JWTConfig{
 				JWTConfig: middleware.JWTConfig{
 					Skipper: func(c echo.Context) bool {
-						return true
-						//	return !enforceRBAC
+						return !enforceRBAC
+					},
+					BeforeFunc: func(c echo.Context) {
+						//body, _ := ioutil.ReadAll(c.Request().Body)
+						//fmt.Printf("Got request body: %+v", string(body))
+						fmt.Printf("Got Request Headers: %+v", c.Request().Header["Authorization"])
+					},
+					SigningMethod: "RS256",
+					Claims:        &DownloopClaims{},
+					SuccessHandler: func(c echo.Context) {
+						user := c.Get("user").(*jwt.Token)
+						claims := user.Claims.(*DownloopClaims)
+						c.Set("uuid", claims.UUID)
 					},
 				},
 				JWKSURL: "https://downloop.us.auth0.com/.well-known/jwks.json",
 			}))
 
-			// configure authorization
-			database, err := db.DB()
-			if err != nil {
-				return err
-			}
-			adapter, err := sqladapter.NewAdapter(database, "postrges", "casbin_rule")
-			if err != nil {
-				return err
-			}
-
-			enforcer, err := casbin.NewEnforcer("/etc/downloop/rbac_model.conf", adapter)
-			if err != nil {
-				return err
-			}
-			enforcer.AddRoleForUser("craig", "admin")
-			enforcer.AddPolicy("admin", "/users", "*")
-			enforcer.AddPolicy("admin", "/sessions", "*")
-
-			e.Use(casbinmiddleware.MiddlewareWithConfig(casbinmiddleware.Config{
-				Skipper: func(c echo.Context) bool {
-					return !enforceRBAC
-				},
-				Enforcer: enforcer,
-				UserGetter: func(c echo.Context) (string, error) {
-					//user := c.Get("user")
-					//return user.(string), nil
-					u, _ := uuid.Parse("b56dd059-3200-45eb-8627-9d1480ba834b")
-					c.Set("user-uuid", u)
-					return "craig", nil
-				},
-			}))
-
-			e.Use(oapimiddleware.OapiRequestValidator(swagger))
 			v1.RegisterHandlers(e, downloopContext)
 			e.Logger.Fatal(e.Start("0.0.0.0:8080"))
 			return nil
@@ -122,7 +107,7 @@ func main() {
 	}
 }
 
-func initDatabase() (*gorm.DB, error) {
+func initDatabase(wipe bool) (*gorm.DB, error) {
 	user := os.Getenv("PG_USERNAME")
 	password := os.Getenv("PG_PASSWORD")
 
@@ -132,6 +117,10 @@ func initDatabase() (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(conn), &gorm.Config{})
 	if err != nil {
 		return nil, err
+	}
+
+	if wipe {
+		db.Migrator().DropTable(&v1.UserModel{}, &v1.SessionModel{})
 	}
 
 	db.AutoMigrate(v1.UserModel{}, v1.SessionModel{})

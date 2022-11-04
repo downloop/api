@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,9 +12,10 @@ import (
 func (dc DownloopContext) GetSessions(c echo.Context) error {
 	var sessions []SessionModel
 
-	//u := c.Get("user-uuid").(uuid.UUID)
-	err := dc.getAll(c, &sessions)
+	u := c.Get("uuid").(uuid.UUID)
+	err := dc.getAll(c, &sessions, u.String())
 	if err != nil {
+		fmt.Printf("ERR")
 		return err
 	}
 
@@ -29,6 +31,8 @@ func (dc DownloopContext) GetSessions(c echo.Context) error {
 		})
 	}
 
+	fmt.Println("RESP %+v", resp)
+
 	return c.JSON(200, resp)
 }
 
@@ -43,7 +47,7 @@ func (dc DownloopContext) PostSessions(c echo.Context) error {
 		end = *session.EndTime
 	}
 
-	u := c.Get("user-uuid").(uuid.UUID)
+	u := c.Get("uuid").(uuid.UUID)
 	model := SessionModel{
 		UserID:    u,
 		StartTime: session.StartTime,
