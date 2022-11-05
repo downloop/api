@@ -47,11 +47,16 @@ func main() {
 				Name:  "validate",
 				Value: true,
 			},
+			&cli.BoolFlag{
+				Name:  "debug-requests",
+				Value: false,
+			},
 		},
 		Action: func(c *cli.Context) error {
 			enforceRBAC := c.Bool("rbac")
 			wipe := c.Bool("wipe")
 			validate := c.Bool("validate")
+			debugRequests := c.Bool("debug-requests")
 
 			db, err := initDatabase(wipe)
 			if err != nil {
@@ -81,9 +86,9 @@ func main() {
 						return !enforceRBAC
 					},
 					BeforeFunc: func(c echo.Context) {
-						//body, _ := ioutil.ReadAll(c.Request().Body)
-						//fmt.Printf("Got request body: %+v", string(body))
-						fmt.Printf("Got Request Headers: %+v", c.Request().Header["Authorization"])
+						if debugRequests {
+							fmt.Printf("Got Request Headers: %+v", c.Request().Header)
+						}
 					},
 					SigningMethod: "RS256",
 					Claims:        &DownloopClaims{},

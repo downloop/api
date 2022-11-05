@@ -15,7 +15,6 @@ func (dc DownloopContext) GetSessions(c echo.Context) error {
 	u := c.Get("uuid").(uuid.UUID)
 	err := dc.getAll(c, &sessions, u.String())
 	if err != nil {
-		fmt.Printf("ERR")
 		return err
 	}
 
@@ -30,8 +29,6 @@ func (dc DownloopContext) GetSessions(c echo.Context) error {
 			EndTime:   &session.EndTime,
 		})
 	}
-
-	fmt.Println("RESP %+v", resp)
 
 	return c.JSON(200, resp)
 }
