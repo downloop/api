@@ -41,6 +41,33 @@ resource "auth0_action" "social_post_login" {
   }
 }
 
+resource "auth0_action" "pre_registration" {
+  name    = "User Pre-Registration"
+  runtime = "node16"
+  deploy  = true
+  code    = file("./pre-registration.js")
+
+  supported_triggers {
+    id      = "pre-user-registration"
+    version = "v2"
+  }
+
+  dependencies {
+    name    = "axios"
+    version = "1.1.3"
+  }
+
+  secrets {
+    name  = "AUTH0_CLIENT_ID"
+    value = local.auth0_client_id
+  }
+
+  secrets {
+    name  = "AUTH0_CLIENT_SECRET"
+    value = local.auth0_client_secret
+  }
+}
+
 resource "auth0_action" "login_add_claims" {
   name    = "Add Token Claims"
   runtime = "node16"
@@ -64,5 +91,14 @@ resource "auth0_trigger_binding" "login_flow" {
   actions {
     id           = auth0_action.login_add_claims.id
     display_name = auth0_action.login_add_claims.name
+  }
+}
+
+resource "auth0_trigger_binding" "pre_registration_flow" {
+  trigger = "pre-user-registration"
+
+  actions {
+    id           = auth0_action.pre_registration.id
+    display_name = auth0_action.pre_registration.name
   }
 }
