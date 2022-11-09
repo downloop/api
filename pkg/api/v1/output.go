@@ -14,8 +14,8 @@ type outputtable interface {
 }
 
 type OutputWriter struct {
-	SuccessResponseType outputtable
-	Format              string
+	SuccessResponse outputtable
+	Format          string
 }
 
 func (w OutputWriter) Write() error {
@@ -30,13 +30,13 @@ func (w OutputWriter) Write() error {
 
 func (w OutputWriter) WriteTable() {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(w.SuccessResponseType.tableHeaders())
-	table.AppendBulk(w.SuccessResponseType.tableData())
+	table.SetHeader(w.SuccessResponse.tableHeaders())
+	table.AppendBulk(w.SuccessResponse.tableData())
 	table.Render()
 }
 
 func (w OutputWriter) WriteJSON() error {
-	data, err := json.Marshal(w.SuccessResponseType)
+	data, err := json.Marshal(w.SuccessResponse)
 	if err != nil {
 		return err
 	}
@@ -54,6 +54,14 @@ func (r SessionResponseList) tableData() [][]string {
 		data = append(data, []string{session.StartTime.String(), session.EndTime.String()})
 	}
 	return data
+}
+
+func (SessionResponse) tableHeaders() []string {
+	return []string{"Start Time", "End Time"}
+}
+
+func (r SessionResponse) tableData() [][]string {
+	return [][]string{[]string{r.Data.StartTime.String(), r.Data.EndTime.String()}}
 }
 
 func (UserResponseList) tableHeaders() []string {

@@ -128,6 +128,6 @@ func initDatabase(wipe bool) (*gorm.DB, error) {
 		db.Migrator().DropTable(&v1.UserModel{}, &v1.SessionModel{})
 	}
 
-	db.AutoMigrate(v1.UserModel{}, v1.SessionModel{})
+	db.AutoMigrate(v1.UserModel{}, v1.SessionModel{}, v1.AltitudeModel{}, v1.LocationModel{})
 	return db, nil
 }

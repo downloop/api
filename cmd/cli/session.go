@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"time"
 
 	v1 "github.com/downloop/api/pkg/api/v1"
@@ -19,17 +18,18 @@ func sessionCreate(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := client.PostSessions(context.Background(), session)
+	resp, err := client.PostSessionsWithResponse(context.Background(), session)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
+	o := v1.OutputWriter{
+		SuccessResponse: resp.JSON201,
+		Format:          c.Generic("format").(*EnumValue).String(),
 	}
-	fmt.Printf("Response: %s\n", body)
+	err = o.Write()
+	if err != nil {
+		fmt.Println(err)
+	}
 	return nil
 }
 
@@ -43,8 +43,8 @@ func sessionsGet(c *cli.Context) error {
 		return err
 	}
 	o := v1.OutputWriter{
-		SuccessResponseType: resp.JSON200,
-		Format:              c.Generic("format").(*EnumValue).String(),
+		SuccessResponse: resp.JSON200,
+		Format:          c.Generic("format").(*EnumValue).String(),
 	}
 	err = o.Write()
 	if err != nil {

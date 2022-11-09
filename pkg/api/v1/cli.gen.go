@@ -652,7 +652,7 @@ func (r GetSessionsResponse) StatusCode() int {
 type PostSessionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *Session
+	JSON201      *SessionResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -870,7 +870,7 @@ func ParsePostSessionsResponse(rsp *http.Response) (*PostSessionsResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest Session
+		var dest SessionResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

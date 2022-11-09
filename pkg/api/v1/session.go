@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -23,11 +22,7 @@ func (dc DownloopContext) GetSessions(c echo.Context) error {
 	}
 
 	for _, session := range sessions {
-		resp.Data = append(resp.Data, Session{
-			Id:        session.ID,
-			StartTime: session.StartTime,
-			EndTime:   &session.EndTime,
-		})
+		resp.Data = append(resp.Data, session.toSession())
 	}
 
 	return c.JSON(200, resp)
@@ -56,7 +51,11 @@ func (dc DownloopContext) PostSessions(c echo.Context) error {
 		return tx.Error
 	}
 
-	return c.JSON(201, nil)
+	resp := SessionResponse{
+		Data: model.toSession(),
+	}
+
+	return c.JSON(201, resp)
 }
 
 func (dc DownloopContext) GetSessionId(c echo.Context, id uuid.UUID) error {
@@ -70,10 +69,7 @@ func (dc DownloopContext) GetSessionId(c echo.Context, id uuid.UUID) error {
 	}
 
 	resp := SessionResponse{
-		Data: Session{
-			Id:        model.ID,
-			StartTime: model.StartTime,
-		},
+		Data: model.toSession(),
 	}
 	return c.JSON(200, resp)
 }
@@ -87,4 +83,12 @@ func (dc DownloopContext) DeleteSessionId(c echo.Context, id uuid.UUID) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 	return c.NoContent(204)
+}
+
+func (m SessionModel) toSession() Session {
+	return Session{
+		Id:        m.ID,
+		StartTime: m.StartTime,
+		EndTime:   &m.EndTime,
+	}
 }

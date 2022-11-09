@@ -44,8 +44,8 @@ func usersGet(c *cli.Context) error {
 		return err
 	}
 	o := v1.OutputWriter{
-		SuccessResponseType: resp.JSON200,
-		Format:              c.Generic("format").(*EnumValue).String(),
+		SuccessResponse: resp.JSON200,
+		Format:          c.Generic("format").(*EnumValue).String(),
 	}
 	err = o.Write()
 	if err != nil {
